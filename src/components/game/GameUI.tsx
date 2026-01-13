@@ -20,7 +20,7 @@ export const GameUI: React.FC<GameUIProps> = ({
       {/* Score Display */}
       <div className="absolute top-4 left-4 z-10">
         <div className="retro-border bg-card p-3">
-          <div className="text-xs text-muted-foreground mb-1">SCORE</div>
+          <div className="text-xs text-muted-foreground mb-1">EMISSIONS</div>
           <div className="text-lg text-primary retro-text-shadow">
             {String(score).padStart(6, '0')}
           </div>
@@ -45,9 +45,9 @@ export const GameUI: React.FC<GameUIProps> = ({
               DRONEMANIA
             </h1>
             <p className="text-xs text-muted-foreground mb-6 leading-relaxed">
-              CONTROL YOUR DRONE!<br />
-              ← LEFT PROP | RIGHT PROP →<br />
-              BOTH = RISE | NONE = FALL
+              MEASURE CHIMNEY EMISSIONS!<br />
+              ← TILT BACK | TILT FORWARD →<br />
+              PITCH CONTROLS SPEED
             </p>
             <button
               onClick={onStart}
@@ -75,7 +75,7 @@ export const GameUI: React.FC<GameUIProps> = ({
               GAME OVER
             </h2>
             <p className="text-sm text-primary mb-2">
-              SCORE: {String(score).padStart(6, '0')}
+              EMISSIONS: {String(score).padStart(6, '0')}
             </p>
             {score >= highScore && score > 0 && (
               <p className="text-xs text-accent mb-4 blink">
