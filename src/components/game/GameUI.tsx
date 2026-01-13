@@ -51,6 +51,11 @@ export const GameUI: React.FC<GameUIProps> = ({
             </p>
             <button
               onClick={onStart}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onStart();
+              }}
               className="retro-border bg-primary text-primary-foreground px-6 py-3 text-sm hover:bg-secondary transition-colors blink"
             >
               PRESS TO START
@@ -79,6 +84,11 @@ export const GameUI: React.FC<GameUIProps> = ({
             )}
             <button
               onClick={onRestart}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onRestart();
+              }}
               className="retro-border bg-secondary text-secondary-foreground px-6 py-3 text-sm hover:bg-primary transition-colors"
             >
               TRY AGAIN
