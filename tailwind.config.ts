@@ -13,6 +13,9 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        retro: ['"Press Start 2P"', 'monospace'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -47,15 +50,15 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        sidebar: {
-          DEFAULT: "hsl(var(--sidebar-background))",
-          foreground: "hsl(var(--sidebar-foreground))",
-          primary: "hsl(var(--sidebar-primary))",
-          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
-          accent: "hsl(var(--sidebar-accent))",
-          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
-          border: "hsl(var(--sidebar-border))",
-          ring: "hsl(var(--sidebar-ring))",
+        drone: {
+          body: "hsl(var(--drone-body))",
+          propeller: "hsl(var(--drone-propeller))",
+          active: "hsl(var(--drone-propeller-active))",
+        },
+        game: {
+          obstacle: "hsl(var(--obstacle))",
+          ground: "hsl(var(--ground))",
+          sky: "hsl(var(--sky))",
         },
       },
       borderRadius: {
