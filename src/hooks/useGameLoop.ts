@@ -27,8 +27,9 @@ const GRAVITY = 0.15;
 const LIFT_FORCE = 0.35;
 const MAX_VELOCITY = 6;
 const ROTATION_SPEED = 2;
-const MAX_ROTATION = 30;
-const SCROLL_SPEED = 3;
+const MAX_ROTATION = 45;
+const BASE_SPEED = 0.5;
+const MAX_SPEED = 5;
 const OBSTACLE_SPAWN_DISTANCE = 300;
 const GROUND_HEIGHT = 64;
 
@@ -58,53 +59,19 @@ export const useGameLoop = () => {
 
   const generateObstacle = useCallback((scrollOffset: number): Obstacle[] => {
     const obstacles: Obstacle[] = [];
-    const rand = Math.random();
-
-    if (rand < 0.4) {
-      // Gap obstacle (top and bottom)
-      const gapY = 150 + Math.random() * (GAME_HEIGHT - 300 - GROUND_HEIGHT);
-      const gapHeight = 120 + Math.random() * 60;
-
-      obstacles.push({
-        id: obstacleIdRef.current++,
-        x: GAME_WIDTH + scrollOffset + 50,
-        y: 0,
-        width: 40,
-        height: gapY - gapHeight / 2,
-        type: 'top',
-      });
-
-      obstacles.push({
-        id: obstacleIdRef.current++,
-        x: GAME_WIDTH + scrollOffset + 50,
-        y: gapY + gapHeight / 2,
-        width: 40,
-        height: GAME_HEIGHT - gapY - gapHeight / 2 - GROUND_HEIGHT,
-        type: 'bottom',
-      });
-    } else if (rand < 0.7) {
-      // Floating obstacle
-      obstacles.push({
-        id: obstacleIdRef.current++,
-        x: GAME_WIDTH + scrollOffset + 50,
-        y: 100 + Math.random() * (GAME_HEIGHT - 300 - GROUND_HEIGHT),
-        width: 60 + Math.random() * 40,
-        height: 30 + Math.random() * 30,
-        type: 'floating',
-      });
-    } else {
-      // Stalactite or stalagmite
-      const fromTop = Math.random() > 0.5;
-      const height = 80 + Math.random() * 120;
-      obstacles.push({
-        id: obstacleIdRef.current++,
-        x: GAME_WIDTH + scrollOffset + 50,
-        y: fromTop ? 0 : GAME_HEIGHT - height - GROUND_HEIGHT,
-        width: 30,
-        height,
-        type: fromTop ? 'top' : 'bottom',
-      });
-    }
+    
+    // Generate chimneys of varying heights
+    const chimneyWidth = 50 + Math.random() * 30;
+    const chimneyHeight = 100 + Math.random() * 200;
+    
+    obstacles.push({
+      id: obstacleIdRef.current++,
+      x: GAME_WIDTH + scrollOffset + 50,
+      y: GAME_HEIGHT - chimneyHeight - GROUND_HEIGHT,
+      width: chimneyWidth,
+      height: chimneyHeight,
+      type: 'bottom',
+    });
 
     return obstacles;
   }, []);
@@ -185,11 +152,11 @@ export const useGameLoop = () => {
           lift = -LIFT_FORCE;
           targetRotation = 0;
         } else if (leftPropeller) {
-          // Only left: rise and tilt right
+          // Only left: rise and tilt right (nose down = forward)
           lift = -LIFT_FORCE * 0.5;
           targetRotation = MAX_ROTATION;
         } else if (rightPropeller) {
-          // Only right: rise and tilt left
+          // Only right: rise and tilt left (nose up = backward)
           lift = -LIFT_FORCE * 0.5;
           targetRotation = -MAX_ROTATION;
         }
@@ -209,8 +176,10 @@ export const useGameLoop = () => {
           newRotation = Math.max(targetRotation, newRotation - ROTATION_SPEED);
         }
 
-        // Update scroll
-        const newScrollOffset = prev.scrollOffset + SCROLL_SPEED;
+        // Speed controlled by pitch - tilt forward (positive rotation) = faster
+        const pitchFactor = newRotation / MAX_ROTATION; // -1 to 1
+        const scrollSpeed = BASE_SPEED + (pitchFactor + 1) * (MAX_SPEED - BASE_SPEED) / 2;
+        const newScrollOffset = prev.scrollOffset + Math.max(0, scrollSpeed);
 
         // Spawn new obstacles
         let newObstacles = [...prev.obstacles];

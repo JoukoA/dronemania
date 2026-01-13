@@ -18,6 +18,9 @@ export const DronemaniaGame: React.FC = () => {
   } = useGameLoop();
 
   const handleTouchStart = useCallback((e: React.TouchEvent | React.MouseEvent) => {
+    // Don't activate propellers during menu screens
+    if (gameState.gameStatus !== 'playing') return;
+    
     e.preventDefault();
     
     const gameContainer = e.currentTarget as HTMLElement;
@@ -35,9 +38,12 @@ export const DronemaniaGame: React.FC = () => {
         setRightPropeller(true);
       }
     });
-  }, [setLeftPropeller, setRightPropeller]);
+  }, [gameState.gameStatus, setLeftPropeller, setRightPropeller]);
 
   const handleTouchEnd = useCallback((e: React.TouchEvent | React.MouseEvent) => {
+    // Don't process during menu screens
+    if (gameState.gameStatus !== 'playing') return;
+    
     e.preventDefault();
     
     // For touch events, check remaining touches
@@ -65,7 +71,7 @@ export const DronemaniaGame: React.FC = () => {
       setLeftPropeller(false);
       setRightPropeller(false);
     }
-  }, [setLeftPropeller, setRightPropeller]);
+  }, [gameState.gameStatus, setLeftPropeller, setRightPropeller]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
