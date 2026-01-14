@@ -23,19 +23,19 @@ interface GameState {
   gameStatus: 'ready' | 'playing' | 'gameover' | 'levelcomplete';
 }
 
-const GAME_WIDTH = 800;
-const GAME_HEIGHT = 600;
-const DRONE_SIZE = 64;
-const GRAVITY = 0.15;
-const LIFT_FORCE = 0.35;
-const MAX_VELOCITY = 6;
+export const GAME_WIDTH = 640;
+export const GAME_HEIGHT = 480;
+const DRONE_SIZE = 48;
+const GRAVITY = 0.12;
+const LIFT_FORCE = 0.28;
+const MAX_VELOCITY = 5;
 const ROTATION_SPEED = 2;
 const MAX_ROTATION = 45;
 const BASE_SPEED = 0.5;
-const MAX_SPEED = 5;
-const OBSTACLE_SPAWN_DISTANCE = 300;
-const GROUND_HEIGHT = 64;
-const MEASURING_DISTANCE = 80;
+const MAX_SPEED = 4;
+const OBSTACLE_SPAWN_DISTANCE = 250;
+const GROUND_HEIGHT = 48;
+const MEASURING_DISTANCE = 60;
 const LEVEL_LENGTH = 3000; // scroll distance per level
 
 export const useGameLoop = () => {

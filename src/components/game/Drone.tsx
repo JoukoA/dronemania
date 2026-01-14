@@ -36,46 +36,46 @@ export const Drone: React.FC<DroneProps> = ({
       {/* Measuring indicator ring */}
       {isMeasuring && (
         <div 
-          className="absolute -inset-4 rounded-full border-2 border-green-400 animate-measuring-pulse"
+          className="absolute -inset-3 rounded-full border-2 border-green-400 animate-measuring-pulse"
           style={{
-            boxShadow: '0 0 20px rgba(74, 222, 128, 0.6), 0 0 40px rgba(74, 222, 128, 0.3)',
+            boxShadow: '0 0 16px rgba(74, 222, 128, 0.6), 0 0 32px rgba(74, 222, 128, 0.3)',
           }}
         />
       )}
       
-      {/* Drone Body */}
-      <div className="relative w-16 h-8">
+      {/* Drone Body - scaled down for 640x480 */}
+      <div className="relative w-12 h-6">
         {/* Left Propeller Mount */}
-        <div className="absolute -left-2 top-0 w-6 h-2 bg-primary" />
+        <div className="absolute -left-1 top-0 w-4 h-1.5 bg-primary" />
         
         {/* Left Propeller */}
         <div
-          className={`absolute -left-4 -top-2 w-10 h-1 ${
+          className={`absolute -left-3 -top-1.5 w-8 h-1 ${
             effectiveLeft ? 'bg-accent glow-yellow propeller-active' : 'bg-secondary'
           }`}
         />
         
         {/* Right Propeller Mount */}
-        <div className="absolute -right-2 top-0 w-6 h-2 bg-primary" />
+        <div className="absolute -right-1 top-0 w-4 h-1.5 bg-primary" />
         
         {/* Right Propeller */}
         <div
-          className={`absolute -right-4 -top-2 w-10 h-1 ${
+          className={`absolute -right-3 -top-1.5 w-8 h-1 ${
             effectiveRight ? 'bg-accent glow-yellow propeller-active' : 'bg-secondary'
           }`}
         />
         
         {/* Main Body */}
-        <div className={`absolute left-4 top-1 w-8 h-6 ${isMeasuring ? 'bg-green-500' : 'bg-primary'} glow-cyan transition-colors duration-200`} />
+        <div className={`absolute left-3 top-0.5 w-6 h-5 ${isMeasuring ? 'bg-green-500' : 'bg-primary'} glow-cyan transition-colors duration-200`} />
         
         {/* Body Detail */}
-        <div className="absolute left-5 top-2 w-6 h-4 bg-background" />
-        <div className={`absolute left-6 top-3 w-4 h-2 ${isMeasuring ? 'bg-green-400' : 'bg-secondary'} transition-colors duration-200`} />
+        <div className="absolute left-4 top-1 w-4 h-3 bg-background" />
+        <div className={`absolute left-5 top-2 w-2 h-1 ${isMeasuring ? 'bg-green-400' : 'bg-secondary'} transition-colors duration-200`} />
         
         {/* Landing Skids */}
-        <div className="absolute left-2 bottom-0 w-12 h-1 bg-muted" />
-        <div className="absolute left-1 bottom-0 w-1 h-2 bg-muted" />
-        <div className="absolute right-1 bottom-0 w-1 h-2 bg-muted" />
+        <div className="absolute left-1.5 bottom-0 w-9 h-0.5 bg-muted" />
+        <div className="absolute left-1 bottom-0 w-0.5 h-1.5 bg-muted" />
+        <div className="absolute right-1 bottom-0 w-0.5 h-1.5 bg-muted" />
       </div>
     </div>
   );

@@ -1,9 +1,9 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Drone } from './Drone';
 import { Obstacle } from './Obstacle';
 import { GameUI } from './GameUI';
 import { BackgroundPlaceholder } from './BackgroundPlaceholder';
-import { useGameLoop } from '@/hooks/useGameLoop';
+import { useGameLoop, GAME_WIDTH, GAME_HEIGHT } from '@/hooks/useGameLoop';
 
 export const DronemaniaGame: React.FC = () => {
   const {
@@ -17,6 +17,31 @@ export const DronemaniaGame: React.FC = () => {
     startNextLevel,
     restartGame,
   } = useGameLoop();
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+
+  // Calculate scale to fit screen while maintaining 640x480
+  useEffect(() => {
+    const updateScale = () => {
+      if (!containerRef.current) return;
+      const parent = containerRef.current.parentElement;
+      if (!parent) return;
+      
+      const maxWidth = Math.min(window.innerWidth - 32, 640);
+      const maxHeight = window.innerHeight - 150; // Leave room for title and instructions
+      
+      const scaleX = maxWidth / GAME_WIDTH;
+      const scaleY = maxHeight / GAME_HEIGHT;
+      const newScale = Math.min(scaleX, scaleY, 1); // Don't scale up beyond 1x
+      
+      setScale(newScale);
+    };
+
+    updateScale();
+    window.addEventListener('resize', updateScale);
+    return () => window.removeEventListener('resize', updateScale);
+  }, []);
 
   const handleTouchStart = useCallback((e: React.TouchEvent | React.MouseEvent) => {
     // Don't activate propellers during menu screens
@@ -80,15 +105,22 @@ export const DronemaniaGame: React.FC = () => {
   }, [gameState.gameStatus, setLeftPropeller, setRightPropeller]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background p-2 md:p-4">
       {/* Title */}
-      <h1 className="text-2xl md:text-3xl text-primary retro-text-shadow mb-4 text-center">
+      <h1 className="text-xl md:text-2xl text-primary retro-text-shadow mb-2 md:mb-4 text-center">
         DRONEMANIA
       </h1>
       
-      {/* Game Container */}
+      {/* Game Container - Fixed 640x480 with scaling */}
       <div
-        className="relative w-full max-w-[800px] aspect-[4/3] retro-border bg-game-sky overflow-hidden scanlines select-none"
+        ref={containerRef}
+        className="relative retro-border bg-game-sky overflow-hidden scanlines select-none"
+        style={{
+          width: GAME_WIDTH,
+          height: GAME_HEIGHT,
+          transform: `scale(${scale})`,
+          transformOrigin: 'top center',
+        }}
         onMouseDown={handleTouchStart}
         onMouseUp={handleTouchEnd}
         onMouseLeave={() => {
@@ -119,8 +151,8 @@ export const DronemaniaGame: React.FC = () => {
         
         {/* Drone */}
         <Drone
-          x={gameState.droneX - 32}
-          y={gameState.droneY - 16}
+          x={gameState.droneX - 24}
+          y={gameState.droneY - 12}
           rotation={gameState.droneRotation}
           leftPropellerActive={leftPropeller}
           rightPropellerActive={rightPropeller}
@@ -157,10 +189,13 @@ export const DronemaniaGame: React.FC = () => {
         )}
       </div>
       
+      {/* Spacer to account for scaled height */}
+      <div style={{ height: GAME_HEIGHT * scale - GAME_HEIGHT + 16 }} />
+      
       {/* Instructions */}
-      <div className="mt-4 text-center">
-        <p className="text-xs text-muted-foreground">
-          KEYBOARD: ← → ARROWS (ONE AT A TIME) | TOUCH: TAP LEFT/RIGHT SIDE
+      <div className="text-center">
+        <p className="text-[8px] md:text-xs text-muted-foreground">
+          ← → ARROWS (ONE AT A TIME) | TAP LEFT/RIGHT
         </p>
       </div>
     </div>
