@@ -160,4 +160,78 @@
   .animate-smoke {
     animation: smoke 2s ease-out infinite;
   }
+
+  /* Measuring glow effect */
+  @keyframes measuring-pulse {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.6;
+      transform: scale(1.1);
+    }
+  }
+
+  .animate-measuring-pulse {
+    animation: measuring-pulse 0.5s ease-in-out infinite;
+  }
+
+  .measuring-glow {
+    filter: drop-shadow(0 0 12px rgba(74, 222, 128, 0.8)) drop-shadow(0 0 24px rgba(74, 222, 128, 0.4));
+  }
+
+  /* Flare animations */
+  @keyframes flare-burn {
+    0%, 100% {
+      transform: scaleY(1) scaleX(1);
+      filter: brightness(1);
+    }
+    25% {
+      transform: scaleY(1.1) scaleX(0.95);
+      filter: brightness(1.2);
+    }
+    50% {
+      transform: scaleY(0.9) scaleX(1.05);
+      filter: brightness(0.9);
+    }
+    75% {
+      transform: scaleY(1.05) scaleX(0.98);
+      filter: brightness(1.1);
+    }
+  }
+
+  .animate-flare-burn {
+    animation: flare-burn 0.3s ease-in-out infinite;
+  }
+
+  @keyframes flare-inner {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(0.8);
+      opacity: 0.8;
+    }
+  }
+
+  .animate-flare-inner {
+    animation: flare-inner 0.2s ease-in-out infinite;
+  }
+
+  @keyframes flame-particle {
+    0% {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-30px) scale(0);
+      opacity: 0;
+    }
+  }
+
+  .animate-flame-particle {
+    animation: flame-particle 0.8s ease-out infinite;
+  }
 }
