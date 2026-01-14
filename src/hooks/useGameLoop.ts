@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-interface Obstacle {
+export interface Obstacle {
   id: number;
   x: number;
   y: number;
   width: number;
   height: number;
-  type: 'top' | 'bottom' | 'floating';
+  type: 'chimney' | 'flare';
 }
 
 interface GameState {
@@ -17,7 +17,10 @@ interface GameState {
   scrollOffset: number;
   obstacles: Obstacle[];
   score: number;
-  gameStatus: 'ready' | 'playing' | 'gameover';
+  level: number;
+  levelProgress: number;
+  isMeasuring: boolean;
+  gameStatus: 'ready' | 'playing' | 'gameover' | 'levelcomplete';
 }
 
 const GAME_WIDTH = 800;
@@ -32,6 +35,8 @@ const BASE_SPEED = 0.5;
 const MAX_SPEED = 5;
 const OBSTACLE_SPAWN_DISTANCE = 300;
 const GROUND_HEIGHT = 64;
+const MEASURING_DISTANCE = 80;
+const LEVEL_LENGTH = 3000; // scroll distance per level
 
 export const useGameLoop = () => {
   const [gameState, setGameState] = useState<GameState>({
@@ -42,6 +47,9 @@ export const useGameLoop = () => {
     scrollOffset: 0,
     obstacles: [],
     score: 0,
+    level: 1,
+    levelProgress: 0,
+    isMeasuring: false,
     gameStatus: 'ready',
   });
 
@@ -56,8 +64,9 @@ export const useGameLoop = () => {
   const gameLoopRef = useRef<number>();
   const lastObstacleRef = useRef(0);
   const obstacleIdRef = useRef(0);
+  const levelStartOffset = useRef(0);
 
-  const generateObstacle = useCallback((scrollOffset: number): Obstacle[] => {
+  const generateObstacle = useCallback((scrollOffset: number, level: number): Obstacle[] => {
     const obstacles: Obstacle[] = [];
     
     // Generate chimneys of varying heights
@@ -70,8 +79,24 @@ export const useGameLoop = () => {
       y: GAME_HEIGHT - chimneyHeight - GROUND_HEIGHT,
       width: chimneyWidth,
       height: chimneyHeight,
-      type: 'bottom',
+      type: 'chimney',
     });
+
+    // Level 2+: Add flares between chimneys
+    if (level >= 2 && Math.random() > 0.5) {
+      const flareX = GAME_WIDTH + scrollOffset + 150 + Math.random() * 100;
+      const flareWidth = 40 + Math.random() * 20;
+      const flareHeight = 60 + Math.random() * 40;
+      
+      obstacles.push({
+        id: obstacleIdRef.current++,
+        x: flareX,
+        y: GAME_HEIGHT - flareHeight - GROUND_HEIGHT,
+        width: flareWidth,
+        height: flareHeight,
+        type: 'flare',
+      });
+    }
 
     return obstacles;
   }, []);
@@ -117,6 +142,29 @@ export const useGameLoop = () => {
     return false;
   }, []);
 
+  const checkMeasuring = useCallback((
+    droneX: number,
+    droneY: number,
+    obstacles: Obstacle[],
+    scrollOffset: number
+  ): boolean => {
+    for (const obs of obstacles) {
+      if (obs.type !== 'chimney') continue;
+      
+      const obsCenter = obs.x - scrollOffset + obs.width / 2;
+      const obsTop = obs.y;
+      
+      // Check if drone is above the chimney and within measuring distance
+      const distX = Math.abs(droneX - obsCenter);
+      const distY = obsTop - droneY;
+      
+      if (distX < obs.width && distY > 0 && distY < MEASURING_DISTANCE) {
+        return true;
+      }
+    }
+    return false;
+  }, []);
+
   const startGame = useCallback(() => {
     setGameState({
       droneX: 150,
@@ -126,8 +174,28 @@ export const useGameLoop = () => {
       scrollOffset: 0,
       obstacles: [],
       score: 0,
+      level: 1,
+      levelProgress: 0,
+      isMeasuring: false,
       gameStatus: 'playing',
     });
+    lastObstacleRef.current = 0;
+    levelStartOffset.current = 0;
+  }, []);
+
+  const startNextLevel = useCallback(() => {
+    setGameState(prev => ({
+      ...prev,
+      droneX: 150,
+      droneY: GAME_HEIGHT / 2,
+      droneVelocityY: 0,
+      droneRotation: 0,
+      obstacles: [],
+      level: prev.level + 1,
+      levelProgress: 0,
+      isMeasuring: false,
+      gameStatus: 'playing',
+    }));
     lastObstacleRef.current = 0;
   }, []);
 
@@ -143,23 +211,24 @@ export const useGameLoop = () => {
 
     const gameLoop = () => {
       setGameState((prev) => {
+        // Both props can't be active simultaneously - enforce exclusive control
+        const effectiveLeft = leftPropeller && !rightPropeller;
+        const effectiveRight = rightPropeller && !leftPropeller;
+        
         // Calculate lift and rotation based on propellers
         let lift = GRAVITY; // Default: falling
         let targetRotation = 0;
 
-        if (leftPropeller && rightPropeller) {
-          // Both propellers: rise straight
-          lift = -LIFT_FORCE;
-          targetRotation = 0;
-        } else if (leftPropeller) {
+        if (effectiveLeft) {
           // Only left: rise and tilt right (nose down = forward)
-          lift = -LIFT_FORCE * 0.5;
+          lift = -LIFT_FORCE * 0.7;
           targetRotation = MAX_ROTATION;
-        } else if (rightPropeller) {
+        } else if (effectiveRight) {
           // Only right: rise and tilt left (nose up = backward)
-          lift = -LIFT_FORCE * 0.5;
+          lift = -LIFT_FORCE * 0.7;
           targetRotation = -MAX_ROTATION;
         }
+        // If both are pressed, neither is effective - drone falls
 
         // Update velocity with lift/gravity
         let newVelocityY = prev.droneVelocityY + lift;
@@ -181,10 +250,32 @@ export const useGameLoop = () => {
         const scrollSpeed = BASE_SPEED + (pitchFactor + 1) * (MAX_SPEED - BASE_SPEED) / 2;
         const newScrollOffset = prev.scrollOffset + Math.max(0, scrollSpeed);
 
+        // Check level progress
+        const levelProgress = ((newScrollOffset - levelStartOffset.current) / LEVEL_LENGTH) * 100;
+        
+        // Level complete check
+        if (levelProgress >= 100 && prev.level < 3) {
+          const finalScore = prev.score;
+          if (finalScore > highScore) {
+            setHighScore(finalScore);
+            localStorage.setItem('dronemania-highscore', String(finalScore));
+          }
+          levelStartOffset.current = newScrollOffset;
+          return {
+            ...prev,
+            droneY: newDroneY,
+            droneVelocityY: newVelocityY,
+            droneRotation: newRotation,
+            scrollOffset: newScrollOffset,
+            levelProgress: 100,
+            gameStatus: 'levelcomplete' as const,
+          };
+        }
+
         // Spawn new obstacles
         let newObstacles = [...prev.obstacles];
         if (newScrollOffset - lastObstacleRef.current > OBSTACLE_SPAWN_DISTANCE) {
-          newObstacles = [...newObstacles, ...generateObstacle(newScrollOffset)];
+          newObstacles = [...newObstacles, ...generateObstacle(newScrollOffset, prev.level)];
           lastObstacleRef.current = newScrollOffset;
         }
 
@@ -196,7 +287,7 @@ export const useGameLoop = () => {
         // Check collisions
         if (checkCollision(prev.droneX, newDroneY, newObstacles, newScrollOffset)) {
           // Game over
-          const finalScore = Math.floor(newScrollOffset / 10);
+          const finalScore = prev.score;
           if (finalScore > highScore) {
             setHighScore(finalScore);
             localStorage.setItem('dronemania-highscore', String(finalScore));
@@ -207,10 +298,17 @@ export const useGameLoop = () => {
             droneRotation: newRotation,
             scrollOffset: newScrollOffset,
             obstacles: newObstacles,
-            score: finalScore,
             gameStatus: 'gameover' as const,
           };
         }
+
+        // Check if measuring emissions (near chimney top)
+        const isMeasuring = checkMeasuring(prev.droneX, newDroneY, newObstacles, newScrollOffset);
+        
+        // Score: base points + bonus for measuring
+        const baseScore = Math.floor(newScrollOffset / 50);
+        const measureBonus = isMeasuring ? 5 : 0;
+        const newScore = prev.score + measureBonus;
 
         return {
           ...prev,
@@ -219,7 +317,9 @@ export const useGameLoop = () => {
           droneRotation: newRotation,
           scrollOffset: newScrollOffset,
           obstacles: newObstacles,
-          score: Math.floor(newScrollOffset / 10),
+          score: newScore,
+          levelProgress: Math.min(levelProgress, 100),
+          isMeasuring,
         };
       });
 
@@ -233,7 +333,7 @@ export const useGameLoop = () => {
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [gameState.gameStatus, leftPropeller, rightPropeller, generateObstacle, checkCollision, highScore]);
+  }, [gameState.gameStatus, leftPropeller, rightPropeller, generateObstacle, checkCollision, checkMeasuring, highScore]);
 
   // Keyboard controls
   useEffect(() => {
@@ -270,6 +370,7 @@ export const useGameLoop = () => {
     setLeftPropeller,
     setRightPropeller,
     startGame,
+    startNextLevel,
     restartGame,
   };
 };

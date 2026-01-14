@@ -14,6 +14,7 @@ export const DronemaniaGame: React.FC = () => {
     setLeftPropeller,
     setRightPropeller,
     startGame,
+    startNextLevel,
     restartGame,
   } = useGameLoop();
 
@@ -28,16 +29,20 @@ export const DronemaniaGame: React.FC = () => {
     
     const touches = 'touches' in e ? Array.from(e.touches) : [e.nativeEvent as MouseEvent];
     
-    touches.forEach((touch) => {
-      const x = ('clientX' in touch ? touch.clientX : 0) - rect.left;
-      const halfWidth = rect.width / 2;
-      
-      if (x < halfWidth) {
-        setLeftPropeller(true);
-      } else {
-        setRightPropeller(true);
-      }
-    });
+    // Only use the last touch - both props can't be active simultaneously
+    const lastTouch = touches[touches.length - 1];
+    const x = ('clientX' in lastTouch ? lastTouch.clientX : 0) - rect.left;
+    const halfWidth = rect.width / 2;
+    
+    // Reset both first, then set the appropriate one
+    setLeftPropeller(false);
+    setRightPropeller(false);
+    
+    if (x < halfWidth) {
+      setLeftPropeller(true);
+    } else {
+      setRightPropeller(true);
+    }
   }, [gameState.gameStatus, setLeftPropeller, setRightPropeller]);
 
   const handleTouchEnd = useCallback((e: React.TouchEvent | React.MouseEvent) => {
@@ -55,9 +60,10 @@ export const DronemaniaGame: React.FC = () => {
       setLeftPropeller(false);
       setRightPropeller(false);
       
-      // Re-enable any remaining touches
-      Array.from(e.touches).forEach((touch) => {
-        const x = touch.clientX - rect.left;
+      // Only use the last remaining touch - both props can't be active simultaneously
+      if (e.touches.length > 0) {
+        const lastTouch = e.touches[e.touches.length - 1];
+        const x = lastTouch.clientX - rect.left;
         const halfWidth = rect.width / 2;
         
         if (x < halfWidth) {
@@ -65,7 +71,7 @@ export const DronemaniaGame: React.FC = () => {
         } else {
           setRightPropeller(true);
         }
-      });
+      }
     } else {
       // Mouse event - release both
       setLeftPropeller(false);
@@ -118,15 +124,20 @@ export const DronemaniaGame: React.FC = () => {
           rotation={gameState.droneRotation}
           leftPropellerActive={leftPropeller}
           rightPropellerActive={rightPropeller}
+          isMeasuring={gameState.isMeasuring}
         />
         
         {/* UI Overlay */}
         <GameUI
           score={gameState.score}
           highScore={highScore}
+          level={gameState.level}
+          levelProgress={gameState.levelProgress}
+          isMeasuring={gameState.isMeasuring}
           gameState={gameState.gameStatus}
           onStart={startGame}
           onRestart={restartGame}
+          onNextLevel={startNextLevel}
         />
         
         {/* Touch indicators during gameplay */}
@@ -134,12 +145,12 @@ export const DronemaniaGame: React.FC = () => {
           <>
             <div 
               className={`absolute left-0 top-0 w-1/2 h-full transition-colors duration-100 pointer-events-none ${
-                leftPropeller ? 'bg-primary/10' : 'bg-transparent'
+                leftPropeller && !rightPropeller ? 'bg-primary/10' : 'bg-transparent'
               }`}
             />
             <div 
               className={`absolute right-0 top-0 w-1/2 h-full transition-colors duration-100 pointer-events-none ${
-                rightPropeller ? 'bg-secondary/10' : 'bg-transparent'
+                rightPropeller && !leftPropeller ? 'bg-secondary/10' : 'bg-transparent'
               }`}
             />
           </>
@@ -149,7 +160,7 @@ export const DronemaniaGame: React.FC = () => {
       {/* Instructions */}
       <div className="mt-4 text-center">
         <p className="text-xs text-muted-foreground">
-          KEYBOARD: ← → ARROWS | TOUCH: TAP LEFT/RIGHT
+          KEYBOARD: ← → ARROWS (ONE AT A TIME) | TOUCH: TAP LEFT/RIGHT SIDE
         </p>
       </div>
     </div>
