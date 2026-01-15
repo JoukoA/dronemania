@@ -4,6 +4,7 @@ import { Obstacle } from './Obstacle';
 import { GameUI } from './GameUI';
 import { RefineryBackground } from './RefineryBackground';
 import { useGameLoop, GAME_WIDTH, GAME_HEIGHT } from '@/hooks/useGameLoop';
+import { useGameSounds } from '@/hooks/useGameSounds';
 
 export const DronemaniaGame: React.FC = () => {
   const {
@@ -17,6 +18,16 @@ export const DronemaniaGame: React.FC = () => {
     startNextLevel,
     restartGame,
   } = useGameLoop();
+
+  const {
+    playCrashSound,
+    startPropellerSound,
+    stopPropellerSound,
+    startBackgroundMusic,
+    stopBackgroundMusic,
+  } = useGameSounds();
+
+  const prevGameStatus = useRef(gameState.gameStatus);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
@@ -42,6 +53,46 @@ export const DronemaniaGame: React.FC = () => {
     window.addEventListener('resize', updateScale);
     return () => window.removeEventListener('resize', updateScale);
   }, []);
+
+  // Handle game status changes for sounds
+  useEffect(() => {
+    const prevStatus = prevGameStatus.current;
+    const currentStatus = gameState.gameStatus;
+    
+    if (prevStatus !== currentStatus) {
+      if (currentStatus === 'playing' && prevStatus === 'ready') {
+        // Game started
+        startBackgroundMusic();
+      } else if (currentStatus === 'gameover') {
+        // Game over - play crash and stop music
+        playCrashSound();
+        stopBackgroundMusic();
+        stopPropellerSound();
+      } else if (currentStatus === 'levelcomplete') {
+        // Level complete - stop propeller but keep music
+        stopPropellerSound();
+      } else if (currentStatus === 'ready') {
+        // Back to menu
+        stopBackgroundMusic();
+        stopPropellerSound();
+      }
+      
+      prevGameStatus.current = currentStatus;
+    }
+  }, [gameState.gameStatus, playCrashSound, startBackgroundMusic, stopBackgroundMusic, stopPropellerSound]);
+
+  // Handle propeller sounds
+  useEffect(() => {
+    if (gameState.gameStatus !== 'playing') return;
+    
+    if (leftPropeller && !rightPropeller) {
+      startPropellerSound('left');
+    } else if (rightPropeller && !leftPropeller) {
+      startPropellerSound('right');
+    } else {
+      stopPropellerSound();
+    }
+  }, [leftPropeller, rightPropeller, gameState.gameStatus, startPropellerSound, stopPropellerSound]);
 
   const handleTouchStart = useCallback((e: React.TouchEvent | React.MouseEvent) => {
     // Don't activate propellers during menu screens
