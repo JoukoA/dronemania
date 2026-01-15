@@ -26,12 +26,12 @@ interface GameState {
 export const GAME_WIDTH = 640;
 export const GAME_HEIGHT = 480;
 const DRONE_SIZE = 48;
-const GRAVITY = 0.18;
-const LIFT_FORCE = 0.35;
-const MAX_VELOCITY = 6;
-const ROTATION_SPEED = 3.5;
-const MAX_ROTATION = 55;
-const CAPSIZE_THRESHOLD = 50; // Rotation angle at which drone capsizes
+const GRAVITY = 0.15;
+const LIFT_FORCE = 0.32;
+const MAX_VELOCITY = 5.5;
+const ROTATION_SPEED = 2.5;
+const MAX_ROTATION = 50;
+const CAPSIZE_THRESHOLD = 48;
 const BASE_SPEED = 0.5;
 const MAX_SPEED = 4;
 const OBSTACLE_SPAWN_DISTANCE = 250;
@@ -224,16 +224,14 @@ export const useGameLoop = () => {
         if (effectiveLeft) {
           // Only left: rise and rotate right (clockwise)
           lift = -LIFT_FORCE * 0.7;
-          rotationForce = ROTATION_SPEED * 1.5; // Strong rotation towards right
+          rotationForce = ROTATION_SPEED * 1.2;
         } else if (effectiveRight) {
           // Only right: rise and rotate left (counter-clockwise)
           lift = -LIFT_FORCE * 0.7;
-          rotationForce = -ROTATION_SPEED * 1.5; // Strong rotation towards left
+          rotationForce = -ROTATION_SPEED * 1.2;
         } else {
-          // Neither propeller - gravity pulls down and rotation tends to increase (unstable)
-          // Add slight random wobble and gravity-induced rotation
-          const wobble = (Math.random() - 0.5) * 0.5;
-          rotationForce = prev.droneRotation * 0.02 + wobble; // Rotation accelerates in current direction
+          // Neither propeller - slight drift in current direction
+          rotationForce = prev.droneRotation * 0.01;
         }
 
         // Update velocity with lift/gravity
