@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Drone } from './Drone';
 import { Obstacle } from './Obstacle';
 import { GameUI } from './GameUI';
-import { BackgroundPlaceholder } from './BackgroundPlaceholder';
+import { RefineryBackground } from './RefineryBackground';
 import { useGameLoop, GAME_WIDTH, GAME_HEIGHT } from '@/hooks/useGameLoop';
 
 export const DronemaniaGame: React.FC = () => {
@@ -135,7 +135,7 @@ export const DronemaniaGame: React.FC = () => {
         }}
       >
         {/* Background */}
-        <BackgroundPlaceholder scrollOffset={gameState.scrollOffset} />
+        <RefineryBackground scrollOffset={gameState.scrollOffset} level={gameState.level} />
         
         {/* Obstacles */}
         {gameState.obstacles.map((obstacle) => (

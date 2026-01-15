@@ -26,11 +26,12 @@ interface GameState {
 export const GAME_WIDTH = 640;
 export const GAME_HEIGHT = 480;
 const DRONE_SIZE = 48;
-const GRAVITY = 0.12;
-const LIFT_FORCE = 0.28;
-const MAX_VELOCITY = 5;
-const ROTATION_SPEED = 2;
-const MAX_ROTATION = 45;
+const GRAVITY = 0.18;
+const LIFT_FORCE = 0.35;
+const MAX_VELOCITY = 6;
+const ROTATION_SPEED = 3.5;
+const MAX_ROTATION = 55;
+const CAPSIZE_THRESHOLD = 50; // Rotation angle at which drone capsizes
 const BASE_SPEED = 0.5;
 const MAX_SPEED = 4;
 const OBSTACLE_SPAWN_DISTANCE = 250;
@@ -217,18 +218,23 @@ export const useGameLoop = () => {
         
         // Calculate lift and rotation based on propellers
         let lift = GRAVITY; // Default: falling
-        let targetRotation = 0;
+        let targetRotation = prev.droneRotation; // Keep current rotation when falling
+        let rotationForce = 0;
 
         if (effectiveLeft) {
-          // Only left: rise and tilt right (nose down = forward)
+          // Only left: rise and rotate right (clockwise)
           lift = -LIFT_FORCE * 0.7;
-          targetRotation = MAX_ROTATION;
+          rotationForce = ROTATION_SPEED * 1.5; // Strong rotation towards right
         } else if (effectiveRight) {
-          // Only right: rise and tilt left (nose up = backward)
+          // Only right: rise and rotate left (counter-clockwise)
           lift = -LIFT_FORCE * 0.7;
-          targetRotation = -MAX_ROTATION;
+          rotationForce = -ROTATION_SPEED * 1.5; // Strong rotation towards left
+        } else {
+          // Neither propeller - gravity pulls down and rotation tends to increase (unstable)
+          // Add slight random wobble and gravity-induced rotation
+          const wobble = (Math.random() - 0.5) * 0.5;
+          rotationForce = prev.droneRotation * 0.02 + wobble; // Rotation accelerates in current direction
         }
-        // If both are pressed, neither is effective - drone falls
 
         // Update velocity with lift/gravity
         let newVelocityY = prev.droneVelocityY + lift;
@@ -237,12 +243,24 @@ export const useGameLoop = () => {
         // Update position
         const newDroneY = prev.droneY + newVelocityY;
 
-        // Smoothly rotate towards target
-        let newRotation = prev.droneRotation;
-        if (newRotation < targetRotation) {
-          newRotation = Math.min(targetRotation, newRotation + ROTATION_SPEED);
-        } else if (newRotation > targetRotation) {
-          newRotation = Math.max(targetRotation, newRotation - ROTATION_SPEED);
+        // Update rotation with physics-based approach
+        let newRotation = prev.droneRotation + rotationForce;
+        newRotation = Math.max(-MAX_ROTATION, Math.min(MAX_ROTATION, newRotation));
+        
+        // Check for capsize (drone flipped too far)
+        if (Math.abs(newRotation) >= CAPSIZE_THRESHOLD) {
+          // Capsized! Game over
+          const finalScore = prev.score;
+          if (finalScore > highScore) {
+            setHighScore(finalScore);
+            localStorage.setItem('dronemania-highscore', String(finalScore));
+          }
+          return {
+            ...prev,
+            droneY: newDroneY,
+            droneRotation: newRotation,
+            gameStatus: 'gameover' as const,
+          };
         }
 
         // Speed controlled by pitch - tilt forward (positive rotation) = faster

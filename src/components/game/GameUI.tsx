@@ -73,7 +73,7 @@ export const GameUI: React.FC<GameUIProps> = ({
             <p className="text-xs text-muted-foreground mb-6 leading-relaxed">
               MEASURE CHIMNEY EMISSIONS!<br />
               ← TILT BACK | TILT FORWARD →<br />
-              ONLY ONE PROP AT A TIME!<br />
+              BALANCE BOTH PROPS OR CAPSIZE!<br />
               FLY CLOSE TO CHIMNEYS TO MEASURE
             </p>
             <button
